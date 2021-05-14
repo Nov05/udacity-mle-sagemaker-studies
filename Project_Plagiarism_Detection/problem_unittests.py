@@ -4,8 +4,11 @@ import numpy as np
 import pandas as pd
 import re
 
+
+cache_dir = '../cache/'
+
 # test csv file
-TEST_CSV = 'data/test_info.csv'
+TEST_CSV = f'{cache_dir}data/test_info.csv'
 
 class AssertTest(object):
     '''Defines general test behavior.'''
@@ -148,6 +151,3 @@ def test_data_split(train_x, train_y, test_x, test_y):
         'train_y should be a 1D array, got shape: {}'.format(train_y.shape)
     
     _print_success_message()
-    
-    
-        

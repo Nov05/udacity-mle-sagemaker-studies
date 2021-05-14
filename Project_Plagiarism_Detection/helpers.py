@@ -2,6 +2,10 @@ import re
 import pandas as pd
 import operator 
 
+
+cache_dir = '../cache/'
+
+
 # Add 'datatype' column that indicates if the record is original wiki answer as 0, training data 1, test data 2, onto 
 # the dataframe - uses stratified random sampling (with seed) to sample by task & plagiarism amount 
 
@@ -82,7 +86,8 @@ def process_file(file):
     return all_text
 
 
-def create_text_column(df, file_directory='data/'):
+def create_text_column(df, 
+                       file_directory=f'{cache_dir}data/'):
     '''Reads in the files, listed in a df and returns that df with an additional column, `Text`. 
        :param df: A dataframe of file information including a column for `File`
        :param file_directory: the main directory where files are stored
