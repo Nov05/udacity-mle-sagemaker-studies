@@ -7,6 +7,7 @@ from six import BytesIO
 # import model from model.py, by name
 from model import BinaryClassifier
 
+
 # default content type is numpy array
 NP_CONTENT_TYPE = 'application/x-npy'
 
@@ -26,7 +27,7 @@ def model_fn(model_dir):
 
     # Determine the device and construct the model.
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = BinaryClassifier(model_info['input_features'], model_info['hidden_dim'], model_info['output_dim'])
+    model = BinaryClassifier(model_info['input_dim'], model_info['hidden_dim'], model_info['output_dim'])
 
     # Load the store model parameters.
     model_path = os.path.join(model_dir, 'model.pth')
@@ -48,6 +49,7 @@ def input_fn(serialized_input_data, content_type):
         return np.load(stream)
     raise Exception('Requested unsupported ContentType in content_type: ' + content_type)
 
+    
 # Provided output data handling
 def output_fn(prediction_output, accept):
     print('Serializing the generated output.')

@@ -3,11 +3,13 @@ import json
 import os
 import pandas as pd
 import torch
+import torch.nn as nn
 import torch.optim as optim
 import torch.utils.data
 
 # imports the model in model.py by name
 from model import BinaryClassifier
+
 
 def model_fn(model_dir):
     """Load the PyTorch model from the `model_dir` directory."""
@@ -23,7 +25,9 @@ def model_fn(model_dir):
 
     # Determine the device and construct the model.
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = BinaryClassifier(model_info['input_features'], model_info['hidden_dim'], model_info['output_dim'])
+    model = BinaryClassifier(model_info['input_dim'], 
+                             model_info['hidden_dim'], 
+                             model_info['output_dim'])
 
     # Load the stored model parameters.
     model_path = os.path.join(model_dir, 'model.pth')
@@ -36,6 +40,7 @@ def model_fn(model_dir):
     print("Done loading model.")
     return model
 
+
 # Gets training data in batches from the train.csv file
 def _get_train_data_loader(batch_size, training_dir):
     print("Get train data loader.")
@@ -44,7 +49,7 @@ def _get_train_data_loader(batch_size, training_dir):
 
     train_y = torch.from_numpy(train_data[[0]].values).float().squeeze()
     train_x = torch.from_numpy(train_data.drop([0], axis=1).values).float()
-
+    
     train_ds = torch.utils.data.TensorDataset(train_x, train_y)
 
     return torch.utils.data.DataLoader(train_ds, batch_size=batch_size)
@@ -66,13 +71,11 @@ def train(model, train_loader, epochs, criterion, optimizer, device):
     # training loop is provided
     for epoch in range(1, epochs + 1):
         model.train() # Make sure that the model is in training mode.
-
         total_loss = 0
 
         for batch in train_loader:
             # get data
             batch_x, batch_y = batch
-
             batch_x = batch_x.to(device)
             batch_y = batch_y.to(device)
 
@@ -87,6 +90,7 @@ def train(model, train_loader, epochs, criterion, optimizer, device):
             optimizer.step()
             
             total_loss += loss.data.item()
+            # total_loss += loss.item()
 
         print("Epoch: {}, Loss: {}".format(epoch, total_loss / len(train_loader)))
 
@@ -108,14 +112,22 @@ if __name__ == '__main__':
     
     # Training Parameters, given
     parser.add_argument('--batch-size', type=int, default=10, metavar='N',
-                        help='input batch size for training (default: 10)')
+                        help='input batch size for training (default: 64)')
     parser.add_argument('--epochs', type=int, default=10, metavar='N',
                         help='number of epochs to train (default: 10)')
     parser.add_argument('--seed', type=int, default=1, metavar='S',
                         help='random seed (default: 1)')
+    parser.add_argument('--lr', type=float, default=0.001, metavar='LR',
+                        help='learning rate (default: 0.01)')
     
-    ## TODO: Add args for the three model parameters: input_features, hidden_dim, output_dim
+    ## TODO: Add args for the three model parameters: input_dim, hidden_dim, output_dim
     # Model Parameters
+    parser.add_argument('--input_dim', type=int, default=3, metavar='N',
+                        help='input dimension (default: 3)')
+    parser.add_argument('--hidden_dim', type=int, default=20, metavar='N',
+                        help='hidden dimension (default: 20)')
+    parser.add_argument('--output_dim', type=int, default=1, metavar='N',
+                        help='output dimension (default: 1)')    
     
     
     # args holds all passed-in arguments
@@ -135,11 +147,16 @@ if __name__ == '__main__':
     ## TODO:  Build the model by passing in the input params
     # To get params from the parser, call args.argument_name, ex. args.epochs or ards.hidden_dim
     # Don't forget to move your model .to(device) to move to GPU , if appropriate
-    model = None
-
+    model = BinaryClassifier(
+                args.input_dim, 
+                args.hidden_dim, 
+                args.output_dim)
+    model.to(device)
+    
     ## TODO: Define an optimizer and loss function for training
-    optimizer = None
-    criterion = None
+    optimizer = optim.SGD(model.parameters(), lr=args.lr)
+    # optimizer = optim.Adam(model.parameters(), lr=args.lr)
+    criterion = nn.BCELoss()
 
     # Trains the model (given line of code, which calls the above training function)
     train(model, train_loader, args.epochs, criterion, optimizer, device)
@@ -149,12 +166,11 @@ if __name__ == '__main__':
     model_info_path = os.path.join(args.model_dir, 'model_info.pth')
     with open(model_info_path, 'wb') as f:
         model_info = {
-            'input_features': args.input_features,
-            'hidden_dim': <add_arg>,
-            'output_dim': <add_arg>,
+            'input_dim': args.input_dim,
+            'hidden_dim': args.hidden_dim,
+            'output_dim': args.output_dim,
         }
         torch.save(model_info, f)
-        
     ## --- End of your code  --- ##
     
 
